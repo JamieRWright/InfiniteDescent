@@ -349,7 +349,7 @@ proposition "\<not>XSDdescending"
   apply(erule allE[of _ "{One,Two,Three}"])
   apply(elim allE[of _ "\<lambda>u v. edge u v"] impE, simp add: scsgEx)
   apply(elim exE conjE)
-  unfolding decreasingHCSC_def  apply clarsimp
+  unfolding decreasingPCSC_def  apply clarsimp
   subgoal for lab f using noHCSC[of lab f] by auto . 
 
 

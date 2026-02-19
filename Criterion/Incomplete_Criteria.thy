@@ -13,9 +13,9 @@ if any edge is matched by a Main or Decrease RR-edge with the considered labels,
 and there is at least one Decr RR-edge. 
 *)  
 
-(* Descending height-change choice : *)
-definition decreasingHCC :: "'node set \<Rightarrow> ('node \<Rightarrow> 'node \<Rightarrow> bool) \<Rightarrow> ('node \<Rightarrow> 'pos) \<Rightarrow> bool" where 
-"decreasingHCC Node1 edge1 lab \<equiv> 
+(* Descending position-change choice : *)
+definition decreasingPCC :: "('node \<Rightarrow> 'node \<Rightarrow> bool) \<Rightarrow> ('node \<Rightarrow> 'pos) \<Rightarrow> bool" where 
+"decreasingPCC edge1 lab \<equiv> 
   (\<forall>nd nd'. edge1 nd nd' \<longrightarrow> RR (nd,lab nd) (nd',lab nd') Main \<or> 
                              RR (nd,lab nd) (nd',lab nd') Decr) \<and> 
   (\<exists>nd nd'. edge1 nd nd' \<and> RR (nd,lab nd) (nd',lab nd') Decr)"
@@ -23,28 +23,28 @@ definition decreasingHCC :: "'node set \<Rightarrow> ('node \<Rightarrow> 'node 
 
 (* If a subgraph has the descent property w.r.t. a labeling function, 
 then any ipath through it will always persist w.r.t. these labels: *)
-lemma decreasingHCC_ipath_alw_holds2: 
-assumes lab: "decreasingHCC Node1 edge1 lab" and nds: "Graph.ipath Node1 edge1 nds"
+lemma decreasingPCC_ipath_alw_holds2: 
+assumes lab: "decreasingPCC edge1 lab" and nds: "Graph.ipath Node1 edge1 nds"
 shows 
 "alw (holds2 (\<lambda>(nd, P) (nd', P'). RR (nd, P) (nd', P') Main \<or> RR (nd, P) (nd', P') Decr))
      (szip nds (smap lab nds))"
-using assms unfolding Graph.ipath_iff_snth decreasingHCC_def
+using assms unfolding Graph.ipath_iff_snth decreasingPCC_def
 unfolding alw_holds2_iff_snth by auto
 
 (* .. and if it additionally visits all nodes infinitely often, then it 
 will also always eventually decrease: *)
-lemma decreasingHCC_ipath_alw_ev_holds2: 
-assumes lab: "decreasingHCC Node1 edge1 lab" and nds: "Graph.ipath Node1 edge1 nds" and 
+lemma decreasingPCC_ipath_alw_ev_holds2: 
+assumes lab: "decreasingPCC edge1 lab" and nds: "Graph.ipath Node1 edge1 nds" and 
 "\<forall>nd nd'. edge1 nd nd' \<longrightarrow> alw (ev (holds2 (\<lambda>ndd ndd'. ndd = nd \<and> ndd' = nd'))) nds"
 shows 
 "alw (ev (holds2 (\<lambda>(nd, P) (nd', P'). RR (nd, P) (nd', P') Decr))) 
    (szip nds (smap lab nds))"
-using assms unfolding Graph.ipath_iff_snth decreasingHCC_def
+using assms unfolding Graph.ipath_iff_snth decreasingPCC_def
 unfolding alw_ev_holds2_iff_snth by fastforce
 
-lemma decreasingHCC_imp_descentIpath: 
+lemma decreasingPCC_imp_descentIpath: 
 assumes nds: "ipath nds"
-and lim: "decreasingHCC (limitS nds) (limitR nds) lab"
+and lim: "decreasingPCC (limitR nds) lab"
 shows "descentIpath nds (smap lab nds)"
 proof-
   obtain i where 0: "Graph.ipath (limitS nds) (limitR nds) (sdrop i nds)" 
@@ -52,19 +52,19 @@ proof-
   show ?thesis 
   unfolding descentIpath_def apply(intro sdrop_evI[where m = i]) 
   unfolding sdrop_szip sdrop_smap  apply safe
-    subgoal using decreasingHCC_ipath_alw_holds2[OF lim 0] .
-    subgoal apply(rule decreasingHCC_ipath_alw_ev_holds2[OF lim 0])
+    subgoal using decreasingPCC_ipath_alw_holds2[OF lim 0] .
+    subgoal apply(rule decreasingPCC_ipath_alw_ev_holds2[OF lim 0])
     apply safe apply(rule alw_sdrop) unfolding limitR_def . .
   qed
 
 (* Sprenger-Dam descent: *)
 definition SDdescending :: bool where 
-"SDdescending \<equiv> \<forall>Node1 edge1. scsg Node1 edge1 \<longrightarrow> (\<exists>lab. wfLabF Node1 lab \<and> decreasingHCC Node1 edge1 lab)"
+"SDdescending \<equiv> \<forall>Node1 edge1. scsg Node1 edge1 \<longrightarrow> (\<exists>lab. wfLabF Node1 lab \<and> decreasingPCC edge1 lab)"
 
 proposition SDdescending_imp_InfiniteDescent: 
 "SDdescending \<Longrightarrow> InfiniteDescent"
 unfolding SDdescending_def InfiniteDescent_def 
-using decreasingHCC_imp_descentIpath scsg_limit Node_finite by blast
+using decreasingPCC_imp_descentIpath scsg_limit Node_finite by blast
 
 
 
@@ -87,7 +87,7 @@ definition RRSetChoice ::
  (\<forall>nd nd'. {nd,nd'} \<subseteq> Node1 \<and> edge1 nd nd' \<longrightarrow> 
    (\<forall>P \<in> lab nd. RR (nd,P) (nd',f nd nd' P) Main \<or> RR (nd,P) (nd',f nd nd' P) Decr))"
 
-(* The height-extended graph of a labeled SGSG: *)
+(* The position-extended graph of a labeled SGSG: *)
 definition "extgrS Node1 lab \<equiv> {(nd,P). nd \<in> Node1 \<and> P \<in> lab nd}"
 
 definition "extgrR edge1 f \<equiv> 
@@ -103,11 +103,11 @@ proof-
   using assms wfLabFS_finite by blast+
 qed
 
-(* Decreasing height-change set-choice: *)
-definition decreasingHCSC :: 
+(* Decreasing position-change set-choice: *)
+definition decreasingPCSC :: 
 "'node set \<Rightarrow> ('node \<Rightarrow> 'node \<Rightarrow> bool) \<Rightarrow> 
 ('node \<Rightarrow> 'pos set) \<Rightarrow> ('node \<Rightarrow> 'node \<Rightarrow> 'pos \<Rightarrow> 'pos) \<Rightarrow> bool" where 
-"decreasingHCSC Node1 edge1 lab f \<equiv> 
+"decreasingPCSC Node1 edge1 lab f \<equiv> 
  RRSetChoice Node1 edge1 lab f \<and> 
  (\<forall>NNode eedge. 
      Graph.subgr NNode eedge (extgrS Node1 lab) (extgrR edge1 f) \<and> 
@@ -121,11 +121,11 @@ definition decreasingHCSC ::
 
 (* Extended-Sprenger-Dam (XSD) descent: *)
 definition XSDdescending :: bool where 
-"XSDdescending \<equiv> \<forall>Node1 edge1. scsg Node1 edge1 \<longrightarrow> (\<exists>lab f. wfLabFS Node1 lab \<and> decreasingHCSC Node1 edge1 lab f)"
+"XSDdescending \<equiv> \<forall>Node1 edge1. scsg Node1 edge1 \<longrightarrow> (\<exists>lab f. wfLabFS Node1 lab \<and> decreasingPCSC Node1 edge1 lab f)"
 
-lemma decreasingHCSC_imp_descentIpath: 
+lemma decreasingPCSC_imp_descentIpath: 
 assumes nds: "ipath nds" and lab: "wfLabFS (limitS nds) lab"
-and lim: "decreasingHCSC (limitS nds) (limitR nds) lab f"
+and lim: "decreasingPCSC (limitS nds) (limitR nds) lab f"
 shows "\<exists>Ps. descentIpath nds Ps"
 proof-
   define Node1 edge1 where Sedge1_def: "Node1 \<equiv> limitS nds" "edge1 \<equiv> limitR nds"
@@ -155,7 +155,7 @@ proof-
     subgoal using P0 unfolding Pi_def  
     by (metis (no_types, lifting) nnds_Sedge1 old.nat.simps(6) old.nat.simps(7) snth.simps(1))
     subgoal for i  unfolding Pi_def apply simp 
-    by (smt (verit, best) Graph.limitR_S decreasingHCSC_def 
+    by (smt (verit, best) Graph.limitR_S decreasingPCSC_def 
       RRSetChoice_def Node_finite Sedge1_def(2) image_subset_iff ipath_sdrop_limit lim 
        limitR_sdrop_eq nds nnds_Sedge1) . .
 
@@ -167,7 +167,7 @@ proof-
              RR (nnds!!i,P) (nnds!!(Suc i),P') Decr)" 
   have 2: "\<forall>i. \<phi> i (Pi i) (Pi (Suc i))" 
   using 0 unfolding \<phi>_def  
-  by (smt (verit, best) "00" decreasingHCSC_def RRSetChoice_def 
+  by (smt (verit, best) "00" decreasingPCSC_def RRSetChoice_def 
          Sedge1_def(1) Sedge1_def(2) empty_subsetI insert_subset lim nnds_Sedge1) 
 
   have nnds_Ps: "Graph.ipath (extgrS Node1 lab) (extgrR edge1 f) (szip nnds Ps)"
@@ -248,7 +248,7 @@ proof-
       with subgr scg obtain nd_P nd_P' where 
       "{nd_P,nd_P'} \<subseteq> NNode \<and> eedge nd_P nd_P'"
       "RR nd_P nd_P' Decr"
-      using lim unfolding decreasingHCSC_def Sedge1_def[symmetric] by metis
+      using lim unfolding decreasingPCSC_def Sedge1_def[symmetric] by metis
 
       then obtain k where k: "k<length nd_Pl - 1" "RR (nd_Pl ! k) (nd_Pl ! Suc k) Decr"
       by (metis Suc_lessE diff_Suc_1 eedge_def) 
@@ -264,14 +264,15 @@ proof-
   show ?thesis using d_nnds by (simp add: descentIpath_sdrop_any nnds_def)
 qed
 
+
 proposition XSDdescending_implies_InfiniteDescent: 
 "XSDdescending \<Longrightarrow> InfiniteDescent"
 unfolding XSDdescending_def InfiniteDescent_def 
-using decreasingHCSC_imp_descentIpath scsg_limit Node_finite by blast
+using decreasingPCSC_imp_descentIpath scsg_limit Node_finite by blast
 
 lemmas Incomplete_Criterion = SDdescending_imp_InfiniteDescent 
                               XSDdescending_implies_InfiniteDescent
-end (* context Heighted_Graph *) 
+end (* context Sloped_Graph *) 
 
 
 end 

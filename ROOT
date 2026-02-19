@@ -1,6 +1,6 @@
 session Infinite_Descent_Criteria =  
  "Buchi_Complementation" +
-  options [document = pdf, document_output = "output"]  
+  options [document = false]  
   sessions 
    "HOL-Library"
   directories 

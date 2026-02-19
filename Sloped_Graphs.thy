@@ -134,7 +134,7 @@ qed
 
 (* *)
 
-(* An infinite path has the infinite descent property w.r.t. an height-decorated 
+(* An infinite path has the infinite descent property w.r.t. an Position-decorated 
 relation RR provided there exists a trace of Ps that, 
 on a tail of the path: 
 --- on the one had persists w.r.t. RR (i.e., decreases or stays)
@@ -143,7 +143,7 @@ NB:
 -- The existence of a tail is captured by the first "eventually"
 -- To express this in temporal-logic form, I zip a trace of Ps to the path, and then talk about 
 the resulted stream of pairs. 
-NB: The definition uses height streams rather than a node height-labeling function because 
+NB: The definition uses Position streams rather than a node Position-labeling function because 
 different Ps are allowed to label the same node a different places in the ipath. 
 (More about this later.)
 *)

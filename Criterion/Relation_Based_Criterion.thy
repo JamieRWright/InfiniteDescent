@@ -257,7 +257,7 @@ by (simp add: Dcl_iter_SlopedRels finite_Dcl_iter initFrag_Dt_trans)
 (**************)
 
 (* A lighter notion of composition (allowing redundant slopes, i.e., 
-both Decr and Main for the same pair of heights) *)
+both Decr and Main for the same pair of positions) *)
 
 definition ccompSl :: "('pos \<Rightarrow> 'pos \<Rightarrow> slope \<Rightarrow> bool) \<Rightarrow> ('pos \<Rightarrow> 'pos \<Rightarrow> slope \<Rightarrow> bool) \<Rightarrow> 
   'pos \<Rightarrow> 'pos \<Rightarrow> slope \<Rightarrow> bool" 
@@ -298,7 +298,7 @@ fun Ccl_iter :: "nat \<Rightarrow> 'node \<Rightarrow> 'node \<Rightarrow> ('pos
 definition Ccl :: "'node \<Rightarrow> 'node \<Rightarrow> ('pos \<Rightarrow> 'pos \<Rightarrow> slope \<Rightarrow> bool) set" where 
 "Ccl nd nd' \<equiv> \<Union>i. Ccl_iter i nd nd'"
 
-(* Variant of the Height Looping Property for Ccl: *)
+(* Variant of the Position Looping Property for Ccl: *)
 definition "TransitiveLoopingCcl \<equiv> \<forall>nd\<in>Node. \<forall>K\<in>Ccl nd nd. (\<exists>P. transSl K P P Decr)"
 
 
@@ -800,7 +800,7 @@ by (metis (no_types, lifting) Nitpick.size_list_simp(2) RR_PosOf length_tl
       less_Suc_eq not_less numeral_2_eq_2 path_length_ge2)
 
 (* There is a correspondence between sloped relations and paths, in the sense that 
-each sloped relation between two nodes nd and nd' tracks the height-persistence of 
+each sloped relation between two nodes nd and nd' tracks the position-persistence of 
 a path between these two nodes. This is why I call the correspondence "tracksPers". 
 *)
 
@@ -966,7 +966,7 @@ qed
 (* Auxiliary notion that generalises descentPath, to be used in inductive proofs. 
 "descentPathParam ndl Pl sl" states something equivalent to the existence of a choice 
 of slopes, all \<le> sl and including sl (i.e., of which sl is the maximum), such that 
-the heights in Pl associated to the nodes in ndl decrease according to these slopes.  
+the positions in Pl associated to the nodes in ndl decrease according to these slopes.  
 *)
 definition "descentPathParam ndl Pl sl \<equiv>
 (\<forall>i. Suc i < length ndl \<longrightarrow>

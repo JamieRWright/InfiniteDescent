@@ -105,7 +105,7 @@ proposition "\<not>SDdescending"
   apply(erule allE[of _ "{One}"])
   apply(elim allE[of _ "\<lambda>u v. True"] impE, simp add: scsgEx)
   apply(elim exE conjE)
-  unfolding decreasingHCC_def wfLabF_def apply clarify
+  unfolding decreasingPCC_def wfLabF_def apply clarify
   subgoal for lab nd nd' apply(cases nd, cases nd', simp)
     by(elim allE[of _ One], simp add: RR_defs) . 
 
