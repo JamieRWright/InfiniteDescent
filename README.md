@@ -1,6 +1,6 @@
 # README #
 
-This is the Isabelle mechanization associated to the paper "PAPER NAME".
+This is the Isabelle mechanization associated to the paper "Certified Infinite Descent Criteria in Isabelle/HOL".
 
 ### Overview ###
 
@@ -27,38 +27,39 @@ Sloped_Graphs.thy:
 
 Subfolders and their contents:
 
-HTML: 
+docs: 
     A folder containing the browsable HTML version of each Isabelle file contained in this folder
 
 Criterion:
     The development of each criterion outlined in the paper
 
     -- VLA_Criterion.thy:
-        Imports the Buchi_Preliminaries file to mechanize the VLA Criterion, as seen in Section 3.1.1 (Definition 4 & 5, Theorem 6).
+        Imports the Buchi_Preliminaries file to mechanize the VLA Criterion, as seen in Section 3.1 (Definition 4 & 5 and Theorem 6).
 
     -- SLA_Criterion.thy:
-        Imports the Buchi_Preliminaries file to mechanize the SLA Criterion, as seen in Section 3.1.2 (Definition 7 & 8, Theorem 9). 
+        Imports the Buchi_Preliminaries file to mechanize the SLA Criterion, as seen in Section 3.1 (Definition 7 & 8 and Theorem 9). 
+        
+    -- Relation_Based_Criterion.thy:
+        Definitions related to, and completeness proof of the relation based criterion as seen in Section 3.2 (Definition 10 and Theorem 11).
 
     -- Incomplete_Criteria.thy:
-        Definitions and soundness proofs of the (Extended) Sprenger-Dam Criteria as seen in Section 4.1 (Definition 10, 13 & 14 and Prop. 11 & 15).
+        Definitions and soundness proofs of the (Extended) Sprenger-Dam Criteria as seen in Section 4.1 (Definition 12, 14, 15 & 16 and Prop. 13 & 17).
+        
+    -- SD_Incomplete.thy:
+        A demonstration of incompleteness for the Sprenger-Dam Criterion, as described in Section 4.1.2.
 
-    -- Relation_Based_Criterion.thy:
-        Definitions related to, and completeness proof of the relation based criterion as seen in Section 4.2 (Definition 17, 19 & 21, Proposition 18 & 20, and Theorem 22).
+    -- XSD_Incomplete.thy:
+        A demonstration of incompleteness for the Extended Sprenger-Dam Criterion, as described in  Section 4.1.1 (Example 18).
 
     -- Flat_Cycles_Criterion.thy:
-        A proof of soundness for the Flat Cycles criterion as seen in Section 5.1 (Theorem 23)
+        A proof of soundness for the Flat Cycles criterion as seen in Section 4.2 (Theorem 19)
 
     -- Descending_Unicycles_Criterion.thy:
-        A proof of (relative) completeness for the Descending Unicycles criterion as seen in Section 5.1 (Definition 25 & 26 and Theorem 27)
+        A proof of (relative) completeness for the Descending Unicycles criterion as seen in Section 5.1 (Definition 20 & 21 and Theorem 22)
 
     -- All.thy:
         Imports all of the above criterion to make each available for a given instantiation, this is the main theory to import.
 
-    -- SD_Incomplete.thy:
-        A demonstration of incompleteness for the Sprenger-Dam Criterion, as described in Section 4.1 (Example 12).
-
-    -- XSD_Incomplete.thy:
-        A demonstration of incompleteness for the Extended Sprenger-Dam Criterion, as described in  Section 4.1 (Example 16).
 
 
 
@@ -66,7 +67,7 @@ Examples:
     A collection of concrete instantiations of the Sloped Graph locale, and (dis)proofs of Infinite Descent.
 
     -- Flat_Aux.thy:
-        The instantiation of the Flat_Aux call graph as detailed in Section 2.3. (Figure 2)
+        The instantiation of the Flat_Aux call graph as detailed in Section 2.3. (Figure 1)
 
     -- Flat_Aux_SLA.thy:
         A demonstration of Infinite Descent proved for Flat_Aux sloped graph using the SLA criterion.
@@ -78,10 +79,10 @@ Examples:
         A disproof of Infinite Descent using the Flat Cycles Criterion seen in Section 5.1 (Example 24). This example is Fig. 4b from "Cyclone: A Heterogeneous Tool for Verifying Infinite Descent" - Cohen et al.
 
     -- Descending_Unicycles_Example.thy:
-        A proof of Infinite Descent using the Descending Unicycles Criterionseen in Section 5.2 (Example 28). Namely Fig. 6a from "Cyclone: A Heterogeneous Tool for Verifying Infinite Descent" - Cohen et al. This theory also verifies that this graph does not satisfy the Flat Cycles criterion.
+        A proof of Infinite Descent using the Descending Unicycles Criterion described in Section 5.1. Namely Fig. 6a from "Cyclone: A Heterogeneous Tool for Verifying Infinite Descent" - Cohen et al. This theory also verifies that this graph does not satisfy the Flat Cycles criterion.
 
     -- Descending_Unicycles_CounterExample.thy:
-        A disproof of Infinite Descent using the Descending Unicycles Criterion seen in Section 5.2 (Example 29). Namely Fig. 6b from "Cyclone: A Heterogeneous Tool for Verifying Infinite Descent" - Cohen et al.
+        A disproof of Infinite Descent using the Descending Unicycles Criterion described in Section 5.1. Namely Fig. 6b from "Cyclone: A Heterogeneous Tool for Verifying Infinite Descent" - Cohen et al.
         
 ### How to run, and browsable version ###
 
