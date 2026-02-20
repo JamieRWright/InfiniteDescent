@@ -86,16 +86,21 @@ Examples:
         
 ### How to run, and browsable version ###
 
-The folder includes the source (theory) files, which can be run with the latest version of Isabelle, namely Isabelle2025, available for download from 
+The folder includes the source (theory) files, which can be run with the latest version of Isabelle, namely Isabelle2025-2, available for download from 
 [https://isabelle.in.tum.de/](https://isabelle.in.tum.de/)
 
-The theory scripts can be inspected by opening Isabelle in interactive mode. They can also be processed in batch mode using the command
+The formalization depends on the Buchi_Complementation AFP entry, as such the AFP must also be installed and correctly configured. To do so download the latest AFP from:
+https://www.isa-afp.org/download/
+and refer to it as a component as described here:
+https://www.isa-afp.org/help/
+
+The theory scripts can then be inspected by opening Isabelle in interactive mode. They can also be processed in batch mode using the command
 
 `isabelle build -D . -v`
 
 where "isabelle" is an alias for 
 the full path to the Isabelle2025 executable. (Details on how to download/install Isabelle and locale the Isabelle executable are operating-system specific and can be found on the [installation instructions from the Isabelle website](https://isabelle.in.tum.de/installation.html)).
 
-The archive also contains a browsable (html) version of the theories, located in the subfolder `Browsable`. The entry point for navigation is, as usual, the file index.html. The command we used to produce these is
+The archive also contains a browsable (html) version of the theories, located in the subfolder `docs`. The entry point for navigation is, as usual, the file index.html. The command we used to produce these is
 
 `isabelle build -D . -o browser_info -v`
