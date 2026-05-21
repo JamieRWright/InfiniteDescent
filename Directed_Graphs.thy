@@ -1,3 +1,6 @@
+(*Certified Infinite Descent Criteria in Isabelle/HOL *)
+(*Authors: Jamie Wright, Liron Cohen, Reuben Rowe and Andrei Popescu*)
+
 theory Directed_Graphs
 imports Preliminaries
 begin

@@ -1,3 +1,6 @@
+(*Certified Infinite Descent Criteria in Isabelle/HOL *)
+(*Authors: Jamie Wright, Liron Cohen, Reuben Rowe and Andrei Popescu*)
+
 theory Preliminaries
 imports "HOL-Library.Sublist" "HOL-Library.Linear_Temporal_Logic_on_Streams"
 "HOL-Library.Code_Target_Int" 

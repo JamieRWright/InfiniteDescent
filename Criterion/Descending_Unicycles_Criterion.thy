@@ -1,3 +1,9 @@
+(*Certified Infinite Descent Criteria in Isabelle/HOL *)
+(*Authors: Jamie Wright, Liron Cohen, Reuben Rowe and Andrei Popescu*)
+
+(*Certified Infinite Descent Criteria in Isabelle/HOL *)
+(*Authors: Jamie Wright, Liron Cohen, Reuben Rowe and Andrei Popescu*)
+
 theory Descending_Unicycles_Criterion
   imports "../Sloped_Graphs"
           "../Buchi_Preliminaries"

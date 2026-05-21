@@ -1,3 +1,6 @@
+(*Certified Infinite Descent Criteria in Isabelle/HOL *)
+(*Authors: Jamie Wright, Liron Cohen, Reuben Rowe and Andrei Popescu*)
+
 theory Buchi_Preliminaries
 imports Preliminaries  "Buchi_Complementation.Complementation_Final"
 begin

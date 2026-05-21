@@ -1,3 +1,9 @@
+(*Certified Infinite Descent Criteria in Isabelle/HOL *)
+(*Authors: Jamie Wright, Liron Cohen, Reuben Rowe and Andrei Popescu*)
+
+(*Certified Infinite Descent Criteria in Isabelle/HOL *)
+(*Authors: Jamie Wright, Liron Cohen, Reuben Rowe and Andrei Popescu*)
+
 (* Relation-Based Criterion for the Infinite Descent Property *)
 theory Relation_Based_Criterion
   imports VLA_Criterion
