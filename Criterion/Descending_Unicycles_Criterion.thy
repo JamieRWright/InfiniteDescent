@@ -3,7 +3,6 @@ theory Descending_Unicycles_Criterion
           "../Buchi_Preliminaries"
 begin
 
-
 (* 1. THE FLAT CYCLE CRITERION *)
 
 context Graph

@@ -12,13 +12,13 @@ begin
 
 context Sloped_Graph
 begin
-thm VLA_Criterion SLA_Criterion 
+thm Flat_Cycles_Criterion
+    DescendingUnicyclesCriterion
     Incomplete_Criterion
+    SLA_Criterion 
+    VLA_Criterion 
     Relation_Based_Criterion
     Relation_Based_Criterion'
-    Flat_Cycles_Criterion
-    DescendingUnicyclesCriterion
-
+   
 end
-
 end

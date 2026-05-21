@@ -69,6 +69,10 @@ unfolding path_iff_set_nth apply safe
   subgoal by auto
   by (auto simp: in_set_conv_nth)
 
+lemma Graph_pathG_restrict:
+  "Graph.pathG N e ndl \<longleftrightarrow> Graph.pathG N (\<lambda>x y. e x y \<and> x \<in> N \<and> y \<in> N) ndl"
+  unfolding Graph.path_iff_nth by auto
+
 lemma path_appendL:
 "pathG (ndl1 @ ndl2) \<Longrightarrow> length ndl1 \<ge> 2 \<Longrightarrow> pathG ndl1" 
 unfolding path_iff_set_nth by simp (metis Suc_lessD nth_append trans_less_add1)
@@ -437,6 +441,12 @@ proof-
     subgoal using 1 path_set by blast 
     subgoal by (simp add: ndl) .
 qed
+
+lemma Graph_scg_restrict:
+  "Graph.scg N e \<longleftrightarrow> Graph.scg N (\<lambda>x y. e x y \<and> x \<in> N \<and> y \<in> N)"
+  unfolding Graph.scg_def Graph.pathCon_def 
+  using Graph_pathG_restrict  by fastforce
+
 
 lemma ex_cycle_scg:
 assumes "cycleG ndl" "set ndl = Node"

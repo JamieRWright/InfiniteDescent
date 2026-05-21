@@ -62,6 +62,15 @@ lemma alw_shd_stl:"alw (holdsS Node) x \<Longrightarrow> shd(stl x) \<in> Node" 
 definition "wfLabF S1 lab \<equiv> \<forall>nd\<in>S1. lab nd \<in> PosOf nd"
 definition "wfLabL ndl Pl \<equiv> length ndl = length Pl \<and> (\<forall>i<length ndl. Pl!i \<in> PosOf (ndl!i))"
 definition "wfLabS nds Ps \<equiv> ev (alw (holds (\<lambda>(nd,P). P \<in> PosOf nd))) (szip nds Ps) "
+
+definition "wfLabFS Node1 lab \<equiv> \<forall>nd\<in>Node1. lab nd \<noteq> {} \<and> lab nd \<subseteq> PosOf nd"
+
+lemma wfLabFS_finite: "wfLabFS Node1 lab \<Longrightarrow> Node1 \<subseteq> Node \<Longrightarrow> nd\<in>Node1 \<Longrightarrow> finite (lab nd)" 
+unfolding wfLabFS_def using infinite_super by (metis in_mono PosOf_finite)
+
+lemma subgr_wfLabFS: 
+"subgr Node1 edge1 S2 R2 \<Longrightarrow> wfLabFS S2 lab \<Longrightarrow> wfLabFS Node1 lab"
+unfolding subgr_def subsetD wfLabFS_def by auto 
 (* NB: For streams, we only care about correct labeling starting 
 eventually, not necessarily from the beginning. *)
 
@@ -653,6 +662,17 @@ proof-
          . 
   qed
 qed
+
+
+
+definition RRSetChoice :: 
+"'node set \<Rightarrow> ('node \<Rightarrow> 'node \<Rightarrow> bool) \<Rightarrow> ('node \<Rightarrow> 'pos set) \<Rightarrow> 
+('node \<Rightarrow> 'node \<Rightarrow> 'pos \<Rightarrow> 'pos) \<Rightarrow> bool" where 
+"RRSetChoice Node1 edge1 lab f \<equiv> 
+ (\<forall>nd nd'. {nd,nd'} \<subseteq> Node1 \<longrightarrow> f nd nd' ` lab nd \<subseteq> lab nd') \<and>
+ (\<forall>nd nd'. {nd,nd'} \<subseteq> Node1 \<and> edge1 nd nd' \<longrightarrow> 
+   (\<forall>P \<in> lab nd. RR (nd,P) (nd',f nd nd' P) Main \<or> RR (nd,P) (nd',f nd nd' P) Decr))"
+
 
 end (* context Sloped_Graph *)
 

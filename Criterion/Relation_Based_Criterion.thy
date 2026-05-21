@@ -2,11 +2,24 @@
 theory Relation_Based_Criterion
   imports VLA_Criterion
 begin
-  
+
+lemma pigeonhole_infinite_seq:
+  fixes f :: "nat \<Rightarrow> 'a"
+  assumes "finite (range f)"
+  shows "\<exists>i j. i < j \<and> f i = f j"
+proof (rule ccontr)
+  assume "\<not> (\<exists>i j. i < j \<and> f i = f j)"
+  hence "inj f" unfolding inj_on_def by (metis linorder_cases)
+  hence "infinite (range f)" using finite_imageD infinite_UNIV_nat by blast
+  with assms show "HOL.False" by contradiction
+qed
 
 context Sloped_Graph
 begin
-(* 1. OPERATIONS ON SLOPED RELATIONS *)
+
+(* ======================================================================== *)
+(* 1. OPERATIONS ON SLOPED RELATIONS                                        *)
+(* ======================================================================== *)
 
 definition MaxSl :: "slope set \<Rightarrow> slope" where 
 "MaxSl sll \<equiv> if Decr \<in> sll then Decr else Main"
@@ -14,14 +27,11 @@ definition MaxSl :: "slope set \<Rightarrow> slope" where
 lemma MaxSl_singl[simp]: "MaxSl {sl} = sl"
 unfolding MaxSl_def by (cases sl, auto)
 
-(* The order \<le> from the paper is called here leqSl. 
-(NB: \<le> denotes the standard boolean-determined order. *)
 definition leqSl ::  "('pos \<Rightarrow> 'pos \<Rightarrow> slope \<Rightarrow> bool) \<Rightarrow> 
    ('pos \<Rightarrow> 'pos \<Rightarrow> slope \<Rightarrow> bool) \<Rightarrow> bool"
 where 
 "leqSl P1 P2 \<equiv> \<forall>h h' sl1. P1 h h' sl1 \<longrightarrow> (\<exists>sl2. sl1 \<le> sl2 \<and> P2 h h' sl2)"
 
-(* Its non-strict version: *)
 definition lessSl ::  "('pos \<Rightarrow> 'pos \<Rightarrow> slope \<Rightarrow> bool) \<Rightarrow> 
    ('pos \<Rightarrow> 'pos \<Rightarrow> slope \<Rightarrow> bool) \<Rightarrow> bool"
 where "lessSl P1 P2 \<equiv> leqSl P1 P2 \<and> P1 \<noteq> P2"
@@ -31,10 +41,7 @@ unfolding leqSl_def by auto
 
 lemma leqSl_trans: "leqSl P1 P2 \<Longrightarrow> leqSl P2 P3 \<Longrightarrow> leqSl P1 P3" 
 unfolding leqSl_def  
-	by (meson dual_order.trans)
-
-lemma incl_impl_leqSl: "P1 \<le> P2 \<Longrightarrow> leqSl P1 P2"
-unfolding leqSl_def le_fun_def by auto
+  by (meson dual_order.trans)
 
 lemma leqSl_antisym_aux: 
 assumes P12: "{P1,P2} \<subseteq> SlopedRels" and 12: "leqSl P1 P2" and 21: "leqSl P2 P1"
@@ -54,7 +61,7 @@ lemma leqSl_antisym:
 assumes P12: "{P1,P2} \<subseteq> SlopedRels" and 12: "leqSl P1 P2" and 21: "leqSl P2 P1"
 shows "P1 = P2"
 using leqSl_antisym_aux assms  
-by fastforce
+  by fastforce
 
 lemma lessSl_antisym: "{P1,P2} \<subseteq> SlopedRels \<Longrightarrow> \<not> (lessSl P1 P2 \<and> leqSl P2 P1)" 
 using leqSl_antisym lessSl_def by auto 
@@ -62,14 +69,11 @@ using leqSl_antisym lessSl_def by auto
 lemma lessSl_trans: "{P1,P2,P3} \<subseteq> SlopedRels \<Longrightarrow> lessSl P1 P2 \<Longrightarrow> lessSl P2 P3 \<Longrightarrow> lessSl P1 P3" 
 unfolding leqSl_def lessSl_def by (metis dual_order.trans insert_subset leqSl_antisym leqSl_def)
 
-(* Transitive closure of sloped relations: *)
+
 inductive transSl :: "('pos \<Rightarrow> 'pos \<Rightarrow> slope \<Rightarrow> bool) \<Rightarrow> ('pos \<Rightarrow> 'pos \<Rightarrow> slope \<Rightarrow> bool)" 
 for K :: "'pos \<Rightarrow> 'pos \<Rightarrow> slope \<Rightarrow> bool" where 
  Base: "K P P' sl \<Longrightarrow> transSl K P P' sl"
 |Step: "transSl K P P' sl1 \<Longrightarrow> K P' P'' sl2 \<Longrightarrow> transSl K P P'' (MaxSl {sl1,sl2})"
-
-lemma transSl_ext: "leqSl P (transSl P)"
-unfolding le_fun_def leqSl_def by (auto intro!: transSl.Base)
 
 lemma transSl_mono: assumes "leqSl P Q"
 shows "leqSl (transSl P) (transSl Q)"
@@ -77,10 +81,8 @@ unfolding le_fun_def leqSl_def apply clarsimp
 subgoal for h1 h2 sl apply (induct rule: transSl.induct)
   subgoal using assms leqSl_def transSl.Base by metis
   subgoal  
-  	by (smt (verit, best) MaxSl_singl assms insert_absorb2 leqSl_def 
+    by (smt (verit, best) MaxSl_singl assms insert_absorb2 leqSl_def 
     less_eq_slope.elims(3) slope.exhaust transSl.Step) . .
-
-(*   *)
 
 definition initFrag :: 
 "('pos \<Rightarrow> 'pos \<Rightarrow> slope \<Rightarrow> bool) set \<Rightarrow> ('pos \<Rightarrow> 'pos \<Rightarrow> slope \<Rightarrow> bool) set \<Rightarrow> bool"
@@ -93,12 +95,13 @@ unfolding initFrag_def by auto
 lemma initFrag_trans: "initFrag L1 L2 \<Longrightarrow> initFrag L2 L3 \<Longrightarrow> initFrag L1 L3"
 unfolding initFrag_def by (meson leqSl_trans)
 
-(* Downward thinning of a set of sloped relations: *)
-
 definition Dt where 
 "Dt LL \<equiv> {R \<in> LL. \<not> (\<exists>R' \<in> LL. lessSl R' R)}"
 
-(* For sets of sloped relations, downward thinning is an initial fragment. *)
+lemma Dt_incl: "Dt LL \<subseteq> LL" unfolding Dt_def by auto
+
+lemma Dt_aux: "\<And>LL LL'. LL \<subseteq> LL' \<Longrightarrow> Dt LL \<subseteq> LL'" unfolding Dt_def by auto
+
 lemma initFrag_Dt: 
 assumes LL: "LL \<subseteq> SlopedRels" and f_LL: "finite LL"
 shows "initFrag (Dt LL) LL"
@@ -126,19 +129,19 @@ unfolding initFrag_def proof safe
    by (metis (no_types, opaque_lifting) assms(1) 
      empty_subsetI ff insert_subset leqSl_trans lessSl_antisym lessSl_def order_trans) .
    hence "inj f" unfolding inj_def lessSl_def  
-   	 by (metis le_neq_implies_less less_natE nat_le_linear) 
+     by (metis le_neq_implies_less less_natE nat_le_linear) 
    hence "HOL.False" using f_LL f_UNIV_LL  
-   	 using infinite_iff_countable_subset by blast
+     using infinite_iff_countable_subset by blast
   }
   then obtain n where n: "f n \<in> Dt LL" by auto
 
   hence "\<forall>n. leqSl (f (Suc n)) (f n)" using ff unfolding lessSl_def 
-  	by (metis leqSl_refl)
+    by (metis leqSl_refl)
   hence "\<forall>n i. leqSl (f (Suc (n+i))) (f n)" apply safe
     subgoal for n i apply(induct i, simp_all) 
    by (metis (no_types, opaque_lifting) leqSl_trans) .
   hence 1: "leqSl (f (n)) R"  
-  	by (metis add_0 f(1) f(2) n)
+    by (metis add_0 f(1) f(2) n)
 
   show "\<exists>R'\<in>Dt LL. leqSl R' R"
   apply(rule bexI[of _ "f n"])
@@ -146,168 +149,35 @@ unfolding initFrag_def proof safe
 qed
 
 
-(* 2. THE DOWNWARD CLOSURE   *)
-
-(* Iterative construction: *)
-
-definition "compSl K1 K2 P P' sl \<equiv> 
-  (\<exists>P'' sl1 sl2. sl = MaxSl {sl1, sl2} \<and> K1 P P'' sl1 \<and> K2 P'' P' sl2) \<and> 
-  sl = Max {sl. \<exists>P'' sl1 sl2. sl = MaxSl {sl1, sl2} \<and> K1 P P'' sl1 \<and> K2 P'' P' sl2}"
-
-lemma compSl_SlopeRels: 
-"{P,P'} \<subseteq> SlopedRels \<Longrightarrow> compSl P P' \<in> SlopedRels"
-unfolding SlopedRels_def compSl_def MaxSl_def by auto
-
-lemma finite_slope_set: "finite (S::slope set)"
-by (metis (full_types) finite.simps insert_iff rev_finite_subset slope.exhaust subsetI)
-
-lemma compSl_mono: 
-assumes "leqSl P1 Q1" "leqSl P2 Q2"
-shows "leqSl (compSl P1 P2) (compSl Q1 Q2)"
-unfolding leqSl_def proof safe
-  fix h h' sl
-  assume 0: "compSl P1 P2 h h' sl"
-  let ?A = "\<lambda>P1 P2. {sl. \<exists>P'' sl1 sl2. sl = MaxSl {sl1, sl2} \<and> P1 h P'' sl1 \<and> P2 P'' h' sl2}"
-  have  "sl = Max (?A P1 P2)" "sl \<in> (?A P1 P2)" using 0 unfolding compSl_def by auto
-  then obtain h'' sl1 sl2 where 1: "sl = MaxSl {sl1, sl2} \<and> P1 h h'' sl1 \<and> P2 h'' h' sl2" by auto
-  then obtain sll1 sll2 where 2: "sl1 \<le> sll1 \<and> Q1 h h'' sll1 \<and> sl2 \<le> sll2 \<and> Q2 h'' h' sll2" 
-  using assms unfolding leqSl_def by blast
-  define sll where sll: "sll = Max (?A Q1 Q2)" 
-  have f: "finite (?A Q1 Q2)" using finite_slope_set by blast
-  have sll_in: "sll \<in> ?A Q1 Q2" unfolding sll apply(rule Max_in[OF f])
-  using 1 2 unfolding MaxSl_def by blast
-  hence "sll \<ge> MaxSl {sll1,sll2}" using "2" Max_ge f sll by fastforce
-  hence 3: "sll \<ge> sl" using 1 2 unfolding MaxSl_def  
-  	by (metis (mono_tags, lifting) insertI1 insertI2 less_eq_slope.elims(1))
-  show "\<exists>sll\<ge>sl. compSl Q1 Q2 h h' sll"
-  apply(rule exI[of _ sll]) using sll sll_in 2 3  
-  	using compSl_def by fastforce 
-qed
-
-fun Dcl_iter :: "nat \<Rightarrow> 'node \<Rightarrow> 'node \<Rightarrow> ('pos \<Rightarrow> 'pos \<Rightarrow> slope \<Rightarrow> bool) set" where 
- "Dcl_iter 0 nd nd' = (if {nd,nd'} \<subseteq> Node \<and> edge nd nd' then {\<lambda>P P' sl. RR (nd,P) (nd',P') sl} else {})"
-|"Dcl_iter (Suc i) nd nd' = 
-  Dt (Dcl_iter i nd nd' \<union> 
-  {compSl K1 K2 | K1 K2 nd''. nd'' \<in> Node \<and> K1 \<in> Dcl_iter i nd nd'' \<and> K2 \<in> Dcl_iter i nd'' nd'})"
-
-definition Dcl :: "'node \<Rightarrow> 'node \<Rightarrow> ('pos \<Rightarrow> 'pos \<Rightarrow> slope \<Rightarrow> bool) set" where 
-"Dcl nd nd' \<equiv> \<Union>i. Dcl_iter i nd nd'"
-
-(* The Transitive Looping Property: *)
-definition "TransitiveLooping \<equiv> \<forall>nd\<in>Node. \<forall>K\<in>Dcl nd nd. (\<exists>P. transSl K P P Decr)"
-
-lemma Dt_incl: "Dt LL \<subseteq> LL" unfolding Dt_def by auto
-
-lemma Dt_aux: "\<And>LL LL'. LL \<subseteq> LL' \<Longrightarrow> Dt LL \<subseteq> LL'" unfolding Dt_def by auto
-
-lemma finite_compSl_set:
-fixes D E::"'node \<Rightarrow> ('pos\<Rightarrow>'pos\<Rightarrow>slope\<Rightarrow>bool) set"
-assumes fin: "\<And>nd''. finite (D nd'') \<and> finite (E nd'')"
-shows "finite
-  {compSl K1 K2 |K1 K2.
-   \<exists>nd''. nd'' \<in> Node \<and> K1 \<in> D nd'' \<and> K2 \<in> E nd''}"
-(is "finite ?A")
-proof-
-  let ?B = "\<Union> { D nd'' \<times> E nd'' | nd''. nd'' \<in> Node}"
-  define f where "f \<equiv> \<lambda> (K_1_K_2::('pos\<Rightarrow>'pos\<Rightarrow>slope\<Rightarrow>bool)\<times>('pos\<Rightarrow>'pos\<Rightarrow>slope\<Rightarrow>bool)). 
-    compSl (fst K_1_K_2) (snd K_1_K_2)"
-  have "?A \<subseteq> f ` ?B" unfolding f_def image_def apply safe
-    subgoal for _ K1 K2 nd'' apply(rule bexI[of _ "(K1, K2)"]) by auto .
-  moreover have "finite ?B" apply(rule finite_Union)
-    subgoal using Node_finite by auto
-    subgoal using fin by blast . 
-  ultimately show "finite ?A"  
-  	by (meson finite_imageI finite_subset)
-qed
-
-lemma finite_Dcl_iter:
-"finite (Dcl_iter i nd nd')" 
-apply(induct i arbitrary: nd nd')
-  subgoal by auto
-  subgoal for i nd nd' by (auto intro!: finite_subset[OF Dt_incl] 
-    finite_compSl_set[of "Dcl_iter i nd" "\<lambda>nd''. Dcl_iter i nd'' nd'"]) .
-
-lemma finite_compSl_Dcl_iter:
-"finite
-  {compSl K1 K2 |K1 K2.
-   \<exists>nd''. nd'' \<in> Node \<and> K1 \<in> Dcl_iter i nd nd'' \<and> K2 \<in> Dcl_iter i nd'' nd'}"
-apply(rule finite_compSl_set) by (simp add: finite_Dcl_iter)
-
-lemma Dcl_iter_SlopedRels:
-"Dcl_iter i nd nd' \<subseteq> SlopedRels"
-proof-
-  show ?thesis apply(induct i arbitrary: nd nd')
-    subgoal using RR_SlopeRels by auto  
-    subgoal using compSl_SlopeRels Dt_incl by simp (blast intro: Dt_aux) .
-qed
-
-lemma Dcl_SlopedRels:
-"Dcl nd nd' \<subseteq> SlopedRels"
-using Dcl_iter_SlopedRels unfolding Dcl_def by auto
-
-lemma initFrag_Dt_trans: 
-"L \<subseteq> SlopedRels \<Longrightarrow> finite L \<Longrightarrow> initFrag L L' \<Longrightarrow> initFrag (Dt L) L'"
-using initFrag_Dt initFrag_trans by blast
-
-lemma Dcl_iter_Dt_trans: 
-"initFrag (Dcl_iter i nd nd') L \<Longrightarrow> initFrag (Dt (Dcl_iter i nd nd')) L"
-by (simp add: Dcl_iter_SlopedRels finite_Dcl_iter initFrag_Dt_trans)
-
-
-(**************)
-
-(* A lighter notion of composition (allowing redundant slopes, i.e., 
-both Decr and Main for the same pair of positions) *)
+(* ======================================================================== *)
+(* 2. THE ORDINARY COMPOSITION CLOSURE (Ccl)                                *)
+(* ======================================================================== *)
 
 definition ccompSl :: "('pos \<Rightarrow> 'pos \<Rightarrow> slope \<Rightarrow> bool) \<Rightarrow> ('pos \<Rightarrow> 'pos \<Rightarrow> slope \<Rightarrow> bool) \<Rightarrow> 
   'pos \<Rightarrow> 'pos \<Rightarrow> slope \<Rightarrow> bool" 
 where 
 "ccompSl K1 K2 P P' sl \<equiv> \<exists>P'' sl1 sl2. sl = MaxSl {sl1, sl2} \<and> K1 P P'' sl1 \<and> K2 P'' P' sl2"
 
+lemma finite_slope_set: "finite (S::slope set)"
+by (metis (full_types) finite.simps insert_iff rev_finite_subset slope.exhaust subsetI)
+
 lemma ccompSl_mono: "leqSl P1 Q1 \<Longrightarrow> leqSl P2 Q2 \<Longrightarrow> leqSl (ccompSl P1 P2) (ccompSl Q1 Q2)"
 unfolding ccompSl_def le_fun_def MaxSl_def leqSl_def
 by (smt (z3) insert_iff less_eq_slope.simps(3) slope.exhaust)
 
-lemma compSl_leqSl_ccompSl: "leqSl (compSl K1 K2) (ccompSl K1 K2)"
-unfolding leqSl_def compSl_def ccompSl_def MaxSl_def by auto
+lemma ccompSl_SlopeRels: 
+  "{P,P'} \<subseteq> SlopedRels \<Longrightarrow> ccompSl P P' \<in> SlopedRels"
+  unfolding SlopedRels_def ccompSl_def MaxSl_def oops
 
-lemma ccompSl_leqSl_compSl: "leqSl (ccompSl K1 K2) (compSl K1 K2)"
-unfolding leqSl_def proof safe
-  fix h h' sl assume "ccompSl K1 K2 h h' sl"
-  then obtain P'' sl1 sl2 where 0: "sl = MaxSl {sl1, sl2}"
-  "K1 h P'' sl1 \<and> K2 P'' h' sl2" unfolding ccompSl_def by auto
-  let ?A = "{sl. \<exists>P'' sl1 sl2. sl = MaxSl {sl1, sl2} \<and> K1 h P'' sl1 \<and> K2 P'' h' sl2}"
-  define sll where sll: "sll = Max ?A"
-  have 1: "sl \<le> sll" unfolding sll apply(rule Max_ge)
-  using 0 finite_slope_set by auto
-  have 2: "sll \<in> ?A" unfolding sll apply(rule Max_in) using 0 finite_slope_set by auto
-  show "\<exists>sll\<ge>sl. compSl K1 K2 h h' sll" unfolding compSl_def
-  apply(rule exI[of _ sll]) using 0 1 2 unfolding sll by auto
-qed
-
-
-(* 2. AUXILIARY CONCEPTS *)
-
-(* Less efficient variant of the composition closure -- not "dopwnward": *)
 fun Ccl_iter :: "nat \<Rightarrow> 'node \<Rightarrow> 'node \<Rightarrow> ('pos \<Rightarrow> 'pos \<Rightarrow> slope \<Rightarrow> bool) set" where 
  "Ccl_iter 0 nd nd' = (if {nd,nd'} \<subseteq> Node \<and> edge nd nd' then {\<lambda>P P' sl. RR (nd,P) (nd',P') sl} else {})"
 |"Ccl_iter (Suc i) nd nd' = 
   Ccl_iter i nd nd' \<union> 
   {ccompSl K1 K2 | K1 K2 nd''. nd'' \<in> Node \<and> K1 \<in> Ccl_iter i nd nd'' \<and> K2 \<in> Ccl_iter i nd'' nd'}"
 
-definition Ccl :: "'node \<Rightarrow> 'node \<Rightarrow> ('pos \<Rightarrow> 'pos \<Rightarrow> slope \<Rightarrow> bool) set" where 
-"Ccl nd nd' \<equiv> \<Union>i. Ccl_iter i nd nd'"
-
-(* Variant of the Position Looping Property for Ccl: *)
-definition "TransitiveLoopingCcl \<equiv> \<forall>nd\<in>Node. \<forall>K\<in>Ccl nd nd. (\<exists>P. transSl K P P Decr)"
-
-
-(*************************************)
-
-(* 3. BASIC PROPERTIES *)
-
 lemma Ccl_iter_nodes: "nd \<notin> Node \<or> nd' \<notin> Node  \<Longrightarrow> Ccl_iter i nd nd' = {}"
-apply(induct i arbitrary: nd nd') by auto 
+  apply(induct i arbitrary: nd nd') by auto 
+
 
 lemma Ccl_iter_PosOf: 
 "K \<in> Ccl_iter i nd nd' \<Longrightarrow> K P P' sl \<Longrightarrow> P \<in> PosOf nd \<and> P' \<in> PosOf nd'"
@@ -316,12 +186,10 @@ apply(cases "{nd,nd'} \<subseteq> Node")
   using RR_PosOf unfolding ccompSl_def by auto
   subgoal using Ccl_iter_nodes by auto .
 
-lemma Ccl_iter_Suc_mono: 
-"Ccl_iter i nd nd' \<subseteq> Ccl_iter (Suc i) nd nd'"
+lemma Ccl_iter_Suc_mono: "Ccl_iter i nd nd' \<subseteq> Ccl_iter (Suc i) nd nd'"
 by auto
 
-lemma Ccl_iter_mono: 
-"i \<le> j \<Longrightarrow> Ccl_iter i nd nd' \<subseteq> Ccl_iter j nd nd'"
+lemma Ccl_iter_mono: "i \<le> j \<Longrightarrow> Ccl_iter i nd nd' \<subseteq> Ccl_iter j nd nd'"
 apply(induct j)
   subgoal by auto
   subgoal using Ccl_iter_Suc_mono le_SucE by blast .
@@ -338,13 +206,6 @@ using assms apply(induct "j-i" arbitrary: j i)
   subgoal by auto   
   subgoal for x j   
     by (metis Suc_diff_le Suc_leD diff_diff_cancel diff_le_self Ccl_iter_Suc_stable) .
-
-lemma finite_slope:
-"finite (UNIV::slope set)"
-proof-
-  have "UNIV = {Main, Decr}" using slope.exhaust by blast
-  thus ?thesis by (metis finite.emptyI finite.insertI)
-qed
 
 lemma Ccl_iter_su_PosOf: 
 "Ccl_iter i nd nd' \<subseteq> 
@@ -365,7 +226,7 @@ proof-
     (is "_ \<subseteq> ?B")
     unfolding f_def by auto
   have "finite ?B" unfolding finite_Pow_iff apply(intro finite_cartesian_product)
-    using PosOf_finite assms finite_slope by auto
+    using PosOf_finite assms finite_slope_set by auto
   thus ?thesis using 2 3 by (meson inj_on_finite)
 qed
 
@@ -373,6 +234,7 @@ lemma finite_Ccl_iter:
 shows "finite (Ccl_iter i nd nd')"  
 by (metis (no_types, lifting) Ccl_iter_nodes Ccl_iter_su_PosOf 
      finite.simps finite_PosOf_prod rev_finite_subset)
+
 
 lemma Ccl_iter_Suc_stops: 
 "\<exists>i. Ccl_iter (Suc i) = Ccl_iter i"
@@ -427,6 +289,13 @@ using Ccl_iter_Suc_stops apply safe
 subgoal for i apply (rule exI[of _ i])
 using Ccl_iter_stable by blast .
 
+definition Ccl :: "'node \<Rightarrow> 'node \<Rightarrow> ('pos \<Rightarrow> 'pos \<Rightarrow> slope \<Rightarrow> bool) set" where 
+"Ccl nd nd' \<equiv> \<Union>i. Ccl_iter i nd nd'"
+
+
+lemma Ccl_nodes: "nd \<notin> Node \<or> nd' \<notin> Node \<Longrightarrow> Ccl nd nd' = {}"
+by (simp add: Ccl_def Ccl_iter_nodes)
+
 lemma Ccl_eq_some_Ccl_iter: "\<exists>i. Ccl = Ccl_iter i"
 proof-
   obtain i where 0: "\<forall>j \<ge> i. Ccl_iter j = Ccl_iter i" 
@@ -442,38 +311,6 @@ proof-
   by fastforce
 qed
 
-lemma finite_Ccl:
-"finite (Ccl nd nd')"
-using Ccl_eq_some_Ccl_iter finite_Ccl_iter by force
-
-
-(* Properties of Ccl *)
-
-lemma initFrag_TransitiveLoopingCcl: 
-assumes 1: "\<forall>nd\<in>Node. initFrag FF (Ccl nd nd)"
-and 2: "\<forall>nd\<in>Node. \<forall>K\<in>FF. \<exists>P. transSl K P P Decr"
-shows "TransitiveLoopingCcl"
-unfolding TransitiveLoopingCcl_def proof safe
-  fix nd K assume 0: "nd \<in> Node" "K \<in> Ccl nd nd"
-  then obtain K' where "K' \<in> FF" and le: "leqSl K' K" 
-  using 1 unfolding initFrag_def by auto
-  hence "\<exists>P. transSl K' P P Decr" using 0 assms by auto
-  thus "\<exists>P. transSl K P P Decr"  using le  
-  	by (metis (full_types) leqSl_def less_eq_slope.simps(1) slope.exhaust transSl_mono)
-qed
-
-lemma Ccl_nodes: "nd \<notin> Node \<or> nd' \<notin> Node \<Longrightarrow> Ccl nd nd' = {}"
-by (simp add: Ccl_def Ccl_iter_nodes)
-
-lemma Ccl_PosOf: 
-"K \<in> Ccl nd nd' \<Longrightarrow> K P P' sl \<Longrightarrow> P \<in> PosOf nd \<and> P' \<in> PosOf nd'"
-using Ccl_def Ccl_iter_PosOf by auto
-
-lemma Ccl_iter_stops_Ccl: "\<exists>i. Ccl = Ccl_iter i"
-using Ccl_iter_stops Ccl_iter_mono apply safe 
-subgoal for i apply (rule exI[of _ i]) unfolding Ccl_def fun_eq_iff 
-using linear by blast .
- 
 lemma Ccl_RR[simp,intro!]:
 "{nd,nd'} \<subseteq> Node \<Longrightarrow> edge nd nd' \<Longrightarrow> (\<lambda>P P' sl. RR (nd,P) (nd',P') sl) \<in> Ccl nd nd'"
 unfolding Ccl_def 
@@ -486,27 +323,169 @@ unfolding Ccl_def apply clarsimp
   subgoal for i j apply(rule exI[of _ "Suc (max i j)"]) 
   by simp (metis in_mono Ccl_iter_mono max.cobounded1 max.cobounded2) .
 
-(* Connection between Ccl and Dcl: they are initial fragments of each other: *)
 
-lemma Dcl_initFrag_Ccl: 
-"initFrag (Dcl nd nd') (Ccl nd nd')"
+definition "TransitiveLoopingCcl \<equiv> \<forall>nd\<in>Node. \<forall>K\<in>Ccl nd nd. (\<exists>P. transSl K P P Decr)"
+
+(* ======================================================================== *)
+(* 3. THE DOWNWARD CLOSURE (Dcl)                                            *)
+(* ======================================================================== *)
+
+definition "compSl K1 K2 P P' sl \<equiv> 
+  (\<exists>P'' sl1 sl2. sl = MaxSl {sl1, sl2} \<and> K1 P P'' sl1 \<and> K2 P'' P' sl2) \<and> 
+  sl = Max {sl. \<exists>P'' sl1 sl2. sl = MaxSl {sl1, sl2} \<and> K1 P P'' sl1 \<and> K2 P'' P' sl2}"
+
+lemma compSl_SlopeRels: 
+"{P,P'} \<subseteq> SlopedRels \<Longrightarrow> compSl P P' \<in> SlopedRels"
+unfolding SlopedRels_def compSl_def MaxSl_def by auto
+
+lemma compSl_leqSl_ccompSl: "leqSl (compSl K1 K2) (ccompSl K1 K2)"
+unfolding leqSl_def compSl_def ccompSl_def MaxSl_def by auto
+
+lemma ccompSl_leqSl_compSl: "leqSl (ccompSl K1 K2) (compSl K1 K2)"
+unfolding leqSl_def proof safe
+  fix h h' sl assume "ccompSl K1 K2 h h' sl"
+  then obtain P'' sl1 sl2 where 0: "sl = MaxSl {sl1, sl2}"
+  "K1 h P'' sl1 \<and> K2 P'' h' sl2" unfolding ccompSl_def by auto
+  let ?A = "{sl. \<exists>P'' sl1 sl2. sl = MaxSl {sl1, sl2} \<and> K1 h P'' sl1 \<and> K2 P'' h' sl2}"
+  define sll where sll: "sll = Max ?A"
+  have 1: "sl \<le> sll" unfolding sll apply(rule Max_ge)
+  using 0 finite_slope_set by auto
+  have 2: "sll \<in> ?A" unfolding sll apply(rule Max_in) using 0 finite_slope_set by auto
+  show "\<exists>sll\<ge>sl. compSl K1 K2 h h' sll" unfolding compSl_def
+  apply(rule exI[of _ sll]) using 0 1 2 unfolding sll by auto
+qed
+
+fun Dcl_iter :: "nat \<Rightarrow> 'node \<Rightarrow> 'node \<Rightarrow> ('pos \<Rightarrow> 'pos \<Rightarrow> slope \<Rightarrow> bool) set" where 
+ "Dcl_iter 0 nd nd' = (if {nd,nd'} \<subseteq> Node \<and> edge nd nd' then {\<lambda>P P' sl. RR (nd,P) (nd',P') sl} else {})"
+|"Dcl_iter (Suc i) nd nd' = 
+  Dt (Dcl_iter i nd nd' \<union> 
+  {compSl K1 K2 | K1 K2 nd''. nd'' \<in> Node \<and> K1 \<in> Dcl_iter i nd nd'' \<and> K2 \<in> Dcl_iter i nd'' nd'})"
+
+lemma finite_compSl_set:
+fixes D E::"'node \<Rightarrow> ('pos\<Rightarrow>'pos\<Rightarrow>slope\<Rightarrow>bool) set"
+assumes fin: "\<And>nd''. finite (D nd'') \<and> finite (E nd'')"
+shows "finite
+  {compSl K1 K2 |K1 K2.
+   \<exists>nd''. nd'' \<in> Node \<and> K1 \<in> D nd'' \<and> K2 \<in> E nd''}"
+(is "finite ?A")
 proof-
-  have "\<And>i. initFrag (Dcl_iter i nd nd') (Ccl_iter i nd nd')"
-  subgoal for i proof(induct i arbitrary: nd nd')
-    case 0 thus ?case unfolding initFrag_def leqSl_def by auto
-  next
-    case(Suc i nd nd')
-    show ?case unfolding Ccl_iter.simps initFrag_Un proof safe
-      show "initFrag (Dcl_iter (Suc i) nd nd') (Ccl_iter i nd nd')"
+  let ?B = "\<Union> { D nd'' \<times> E nd'' | nd''. nd'' \<in> Node}"
+  define f where "f \<equiv> \<lambda> (K_1_K_2::('pos\<Rightarrow>'pos\<Rightarrow>slope\<Rightarrow>bool)\<times>('pos\<Rightarrow>'pos\<Rightarrow>slope\<Rightarrow>bool)). 
+    compSl (fst K_1_K_2) (snd K_1_K_2)"
+  have "?A \<subseteq> f ` ?B" unfolding f_def image_def apply safe
+    subgoal for _ K1 K2 nd'' apply(rule bexI[of _ "(K1, K2)"]) by auto .
+  moreover have "finite ?B" apply(rule finite_Union)
+    subgoal using Node_finite by auto
+    subgoal using fin by blast . 
+  ultimately show "finite ?A"  
+    by (meson finite_imageI finite_subset)
+qed
+
+lemma finite_Dcl_iter: "finite (Dcl_iter i nd nd')" 
+apply(induct i arbitrary: nd nd')
+  subgoal by auto
+  subgoal for i nd nd' apply (auto intro!: finite_subset[OF Dt_incl] 
+    finite_compSl_set[of "Dcl_iter i nd" "\<lambda>nd''. Dcl_iter i nd'' nd'"]) . .
+
+lemma finite_compSl_Dcl_iter:
+"finite {compSl K1 K2 |K1 K2. \<exists>nd''. nd'' \<in> Node \<and> K1 \<in> Dcl_iter i nd nd'' \<and> K2 \<in> Dcl_iter i nd'' nd'}"
+apply(rule finite_compSl_set) by (simp add: finite_Dcl_iter)
+
+lemma Dcl_iter_SlopedRels: "Dcl_iter i nd nd' \<subseteq> SlopedRels"
+proof(induct i arbitrary: nd nd')
+  case 0 thus ?case using RR_SlopeRels by auto  
+next
+  case (Suc i)
+  thus ?case using compSl_SlopeRels Dt_incl by simp (blast intro: Dt_aux)
+qed
+
+
+lemma Dcl_iter_subseqI:
+  assumes "\<And>R h h' sl. R \<in> Dcl_iter (Suc i) nd nd' \<Longrightarrow>
+           (h, h') \<notin> PosOf nd \<times> PosOf nd' \<Longrightarrow>
+           R h h' sl \<Longrightarrow>
+           HOL.False"
+shows "Dcl_iter (Suc i) nd nd' \<subseteq> {R. \<forall>h h' sl. (h, h') \<notin> PosOf nd \<times> PosOf nd' \<longrightarrow> \<not> R h h' sl}"
+  using assms by auto
+
+lemma Dcl_iter_su_PosOf: 
+"Dcl_iter i nd nd' \<subseteq> 
+ {R . \<forall>h h' sl. (h,h') \<notin> PosOf nd \<times> PosOf nd' \<longrightarrow> \<not> R h h' sl}"
+proof (induct i arbitrary: nd nd')
+  case 0 thus ?case using RR_PosOf by auto
+next
+  case (Suc i nd nd')
+  show ?case
+  proof (rule Dcl_iter_subseqI)
+    fix R h h' sl
+    assume R_in: "R \<in> Dcl_iter (Suc i) nd nd'" 
+       and h_notin: "(h, h') \<notin> PosOf nd \<times> PosOf nd'" 
+       and R_h: "R h h' sl"
+       
+    from R_in have "R \<in> Dt (Dcl_iter i nd nd' \<union> {compSl K1 K2 |K1 K2 nd''. nd'' \<in> Node \<and> K1 \<in> Dcl_iter i nd nd'' \<and> K2 \<in> Dcl_iter i nd'' nd'})"
+      by simp
+    hence "R \<in> Dcl_iter i nd nd' \<union> {compSl K1 K2 |K1 K2 nd''. nd'' \<in> Node \<and> K1 \<in> Dcl_iter i nd nd'' \<and> K2 \<in> Dcl_iter i nd'' nd'}"
+      using Dt_incl by blast
+    thus "HOL.False"
+    proof
+      assume "R \<in> Dcl_iter i nd nd'"
+      with Suc[of nd nd'] h_notin R_h show "HOL.False" by blast
+    next
+      assume "R \<in> {compSl K1 K2 |K1 K2 nd''. nd'' \<in> Node \<and> K1 \<in> Dcl_iter i nd nd'' \<and> K2 \<in> Dcl_iter i nd'' nd'}"
+      then obtain K1 K2 nd'' where "R = compSl K1 K2" 
+        and "K1 \<in> Dcl_iter i nd nd''" 
+        and "K2 \<in> Dcl_iter i nd'' nd'" by blast
+      with R_h obtain P'' sl1 sl2 where "K1 h P'' sl1" and "K2 P'' h' sl2"
+        unfolding compSl_def by blast
+      
+      have "h \<in> PosOf nd" 
+        using `K1 \<in> Dcl_iter i nd nd''` `K1 h P'' sl1` Suc[of nd nd''] by blast
+      moreover have "h' \<in> PosOf nd'" 
+        using `K2 \<in> Dcl_iter i nd'' nd'` `K2 P'' h' sl2` Suc[of nd'' nd'] by blast
+      ultimately have "(h, h') \<in> PosOf nd \<times> PosOf nd'" by simp
+      with h_notin show "HOL.False" by contradiction
+    qed
+  qed
+qed
+
+lemma Dcl_iter_nodes_out:
+  "nd \<notin> Node \<or> nd' \<notin> Node \<Longrightarrow> Dcl_iter i nd nd' = {}"
+  apply(induct i arbitrary: nd nd')
+  subgoal by auto
+  subgoal by (auto simp add: Dt_def) .
+
+
+lemma initFrag_Dt_trans: 
+"L \<subseteq> SlopedRels \<Longrightarrow> finite L \<Longrightarrow> initFrag L L' \<Longrightarrow> initFrag (Dt L) L'"
+using initFrag_Dt initFrag_trans by blast
+
+lemma Dt_initFrag_aux: "initFrag LL LL' \<Longrightarrow> initFrag LL (Dt LL')"
+  using Dt_incl initFrag_def by auto
+
+lemma initFrag_Un_left: "initFrag LL LL' \<Longrightarrow> initFrag (LL \<union> KK) LL'"
+using initFrag_def by auto
+
+
+(* ======================================================================== *)
+(* 4. MUTUAL INITIAL FRAGMENTS AND Dcl_iter STABILIZATION                   *)
+(* ======================================================================== *)
+
+lemma Dcl_iter_initFrag_Ccl_iter: "initFrag (Dcl_iter i nd nd') (Ccl_iter i nd nd')"
+proof(induct i arbitrary: nd nd')
+  case 0 thus ?case unfolding initFrag_def leqSl_def by auto
+next
+  case(Suc i nd nd')
+  show ?case unfolding Ccl_iter.simps initFrag_Un proof safe
+    show "initFrag (Dcl_iter (Suc i) nd nd') (Ccl_iter i nd nd')"
       using Suc unfolding initFrag_Un 
       using finite_compSl_Dcl_iter finite_Dcl_iter initFrag_trans Dcl_iter_SlopedRels
       apply(auto intro!: initFrag_Dt_trans compSl_SlopeRels) 
       apply blast apply blast apply blast
       by (meson UnI1 initFrag_def)
-    next
-      note 1 = Dcl_iter.simps(2)[of i nd nd'] 
-      show "initFrag (Dcl_iter (Suc i) nd nd')
-        {ccompSl K1 K2 | K1 K2 nd''. nd'' \<in> Node \<and> K1 \<in> Ccl_iter i nd nd'' \<and> K2 \<in> Ccl_iter i nd'' nd'}"
+  next
+    note 1 = Dcl_iter.simps(2)[of i nd nd'] 
+    show "initFrag (Dcl_iter (Suc i) nd nd')
+      {ccompSl K1 K2 | K1 K2 nd''. nd'' \<in> Node \<and> K1 \<in> Ccl_iter i nd nd'' \<and> K2 \<in> Ccl_iter i nd'' nd'}"
       unfolding 1
       apply(rule initFrag_Dt_trans)
         subgoal using Dcl_iter_SlopedRels by (auto intro!: compSl_SlopeRels)
@@ -514,44 +493,303 @@ proof-
         subgoal unfolding initFrag_def apply auto apply(drule Suc[unfolded initFrag_def, rule_format])+
         apply safe subgoal for K1 K2 nd'' K1' K2'
         apply(rule bexI[of _ "compSl K1' K2'"]) apply (auto simp: ccompSl_mono)  
-        		by (meson compSl_leqSl_ccompSl ccompSl_mono leqSl_trans) . . 
-    qed
-  qed .
-  thus ?thesis unfolding Dcl_def Ccl_def initFrag_def by blast
+                by (meson compSl_leqSl_ccompSl ccompSl_mono leqSl_trans) . . 
+  qed
 qed
 
-lemma Dt_initFrag_aux: "initFrag LL LL' \<Longrightarrow> initFrag LL (Dt LL')"
-using Dt_incl initFrag_def by auto
-
-lemma initFrag_Un_left: "initFrag LL LL' \<Longrightarrow> initFrag (LL \<union> KK) LL'"
-using initFrag_def by auto
-
-lemma Ccl_initFrag_Dcl: 
-"initFrag (Ccl nd nd') (Dcl nd nd')"
-proof-
-  have "\<And>i. initFrag (Ccl_iter i nd nd') (Dcl_iter i nd nd')"
-  subgoal for i proof(induct i arbitrary: nd nd')
-    case 0 thus ?case unfolding initFrag_def leqSl_def by auto
+lemma Ccl_iter_initFrag_Dcl_iter: "initFrag (Ccl_iter i nd nd') (Dcl_iter i nd nd')"
+proof(induct i arbitrary: nd nd')
+  case 0 thus ?case unfolding initFrag_def leqSl_def by auto
+next
+  case(Suc i nd nd')
+  show ?case unfolding Dcl_iter.simps apply(rule Dt_initFrag_aux) 
+  unfolding initFrag_Un proof safe
+    show "initFrag (Ccl_iter (Suc i) nd nd') (Dcl_iter i nd nd')" apply simp 
+    apply(rule initFrag_Un_left) using Suc by auto 
   next
-    case(Suc i nd nd')
-    show ?case unfolding Dcl_iter.simps apply(rule Dt_initFrag_aux) 
-    unfolding initFrag_Un proof safe
-      show "initFrag (Ccl_iter (Suc i) nd nd') (Dcl_iter i nd nd')" apply simp 
-      apply(rule initFrag_Un_left) using Suc by auto 
-    next
-      note 1 = Dcl_iter.simps(2)[of i nd nd'] 
-      show "initFrag (Ccl_iter (Suc i) nd nd')
-        {compSl K1 K2 | K1 K2 nd''. nd'' \<in> Node \<and> K1 \<in> Dcl_iter i nd nd'' \<and> K2 \<in> Dcl_iter i nd'' nd'}"
+    note 1 = Dcl_iter.simps(2)[of i nd nd'] 
+    show "initFrag (Ccl_iter (Suc i) nd nd')
+      {compSl K1 K2 | K1 K2 nd''. nd'' \<in> Node \<and> K1 \<in> Dcl_iter i nd nd'' \<and> K2 \<in> Dcl_iter i nd'' nd'}"
       unfolding 1 apply simp unfolding initFrag_def apply auto 
       apply(drule Suc[unfolded initFrag_def, rule_format])+
-        apply safe subgoal for K1 K2 nd'' K1' K2'
-        apply(rule bexI[of _ "ccompSl K1' K2'"])
-          subgoal by (meson ccompSl_leqSl_compSl ccompSl_mono compSl_leqSl_ccompSl leqSl_trans)  
-          subgoal by  auto . .
-    qed
-  qed .
-  thus ?thesis unfolding Dcl_def Ccl_def initFrag_def by blast
+      apply safe subgoal for K1 K2 nd'' K1' K2'
+      apply(rule bexI[of _ "ccompSl K1' K2'"])
+        subgoal by (meson ccompSl_leqSl_compSl ccompSl_mono compSl_leqSl_ccompSl leqSl_trans)  
+        subgoal by  auto . .
+  qed
 qed
+
+
+
+lemma Dcl_iter_finite_range:
+  assumes "nd \<in> Node" "nd' \<in> Node"
+  shows "finite (range (\<lambda>i. Dcl_iter i nd nd'))"
+proof -
+  let ?S = "{R. (\<forall>h h' (sl::slope). (h, h') \<notin> PosOf nd \<times> PosOf nd' \<longrightarrow> \<not> R h h' sl)}"
+  have "range (\<lambda>i. Dcl_iter i nd nd') \<subseteq> Pow ?S"
+    using Dcl_iter_su_PosOf by blast
+  moreover have "finite (Pow ?S)"
+    unfolding finite_Pow_iff using finite_PosOf_prod[OF assms] .
+  ultimately show ?thesis by (metis (mono_tags, lifting) rev_finite_subset)
+qed
+
+lemma Dcl_iter_finite_range_all:
+  "finite (range (\<lambda>i. Dcl_iter i nd nd'))"
+proof (cases "nd \<in> Node \<and> nd' \<in> Node")
+  case True thus ?thesis using Dcl_iter_finite_range by auto
+next
+  case False
+  hence "\<forall>i. Dcl_iter i nd nd' = {}" using Dcl_iter_nodes_out by auto
+  hence "range (\<lambda>i. Dcl_iter i nd nd') = {{}}" by auto
+  thus ?thesis by simp
+qed
+
+lemma Dt_idem: "Dt (Dt X) = Dt X"
+  unfolding Dt_def by auto
+
+lemma Dcl_iter_thin_0: "Dt (Dcl_iter 0 nd nd') = Dcl_iter 0 nd nd'"
+proof (cases "{nd,nd'} \<subseteq> Node \<and> edge nd nd'")
+  case True
+  hence "Dcl_iter 0 nd nd' = {\<lambda>P P' sl. RR (nd, P) (nd', P') sl}" by simp
+  thus ?thesis unfolding Dt_def lessSl_def leqSl_def by auto
+next
+  case False
+  hence "Dcl_iter 0 nd nd' = {}" by simp
+  thus ?thesis unfolding Dt_def by auto
+qed
+
+lemma Dcl_iter_thin: "Dt (Dcl_iter i nd nd') = Dcl_iter i nd nd'"
+proof (cases i)
+  case 0 thus ?thesis using Dcl_iter_thin_0 by simp
+next
+  case (Suc n)
+  have "Dcl_iter (Suc n) nd nd' = Dt (Dcl_iter n nd nd' \<union> {compSl K1 K2 |K1 K2 nd''. nd'' \<in> Node \<and> K1 \<in> Dcl_iter n nd nd'' \<and> K2 \<in> Dcl_iter n nd'' nd'})"
+    by simp
+  thus ?thesis using Dt_idem Suc by simp
+qed
+
+lemma Dcl_iter_initFrag_Suc:
+  "initFrag (Dcl_iter (Suc i) nd nd') (Dcl_iter i nd nd')"
+proof -
+  let ?X = "Dcl_iter i nd nd' \<union> {compSl K1 K2 |K1 K2 nd''. nd'' \<in> Node \<and> K1 \<in> Dcl_iter i nd nd'' \<and> K2 \<in> Dcl_iter i nd'' nd'}"
+  have "?X \<subseteq> SlopedRels" 
+    using Dcl_iter_SlopedRels compSl_SlopeRels by blast
+  moreover have "finite ?X"
+    using finite_Dcl_iter finite_compSl_Dcl_iter by auto
+  ultimately have "initFrag (Dt ?X) ?X"
+    using initFrag_Dt by blast
+  thus ?thesis
+    unfolding Dcl_iter.simps initFrag_Un by blast
+qed
+
+lemma Dcl_iter_initFrag_le:
+  "i \<le> j \<Longrightarrow> initFrag (Dcl_iter j nd nd') (Dcl_iter i nd nd')"
+  apply(induct j)
+  subgoal by (simp add: initFrag_def leqSl_refl)
+  subgoal for j 
+    using Ccl_iter_initFrag_Dcl_iter Dcl_iter_initFrag_Ccl_iter
+      Dcl_iter_initFrag_Suc initFrag_trans le_Suc_eq
+    by blast .
+
+lemma Dt_initFrag_antisym:
+  assumes "A \<subseteq> SlopedRels" "B \<subseteq> SlopedRels"
+  and "Dt A = A" "Dt B = B"
+  and AB: "initFrag A B" and BA: "initFrag B A"
+  shows "A = B"
+proof (rule subset_antisym; rule subsetI)
+  fix R assume "R \<in> A"
+  from `R \<in> A` BA obtain R' where "R' \<in> B" and "leqSl R' R" unfolding initFrag_def by blast
+  from `R' \<in> B` AB obtain R'' where "R'' \<in> A" and "leqSl R'' R'" unfolding initFrag_def by blast
+  have "leqSl R'' R" using `leqSl R'' R'` `leqSl R' R` leqSl_trans by blast
+  have "R'' = R" 
+  proof (rule ccontr)
+    assume "R'' \<noteq> R"
+    hence "lessSl R'' R" using `leqSl R'' R` unfolding lessSl_def by simp
+    with `R'' \<in> A` `R \<in> A` have "R \<notin> Dt A" unfolding Dt_def by blast
+    with `Dt A = A` `R \<in> A` show "HOL.False" by simp
+  qed
+  hence "leqSl R R'" using `leqSl R'' R'` by simp
+  have "R = R'" using `leqSl R R'` `leqSl R' R` `R \<in> A` `R' \<in> B` assms(1,2) leqSl_antisym by blast
+  thus "R \<in> B" using `R' \<in> B` by simp
+next
+  fix R assume "R \<in> B"
+  from `R \<in> B` AB obtain R' where "R' \<in> A" and "leqSl R' R" unfolding initFrag_def by blast
+  from `R' \<in> A` BA obtain R'' where "R'' \<in> B" and "leqSl R'' R'" unfolding initFrag_def by blast
+  have "leqSl R'' R" using `leqSl R'' R'` `leqSl R' R` leqSl_trans by blast
+  have "R'' = R" 
+  proof (rule ccontr)
+    assume "R'' \<noteq> R"
+    hence "lessSl R'' R" using `leqSl R'' R` unfolding lessSl_def by simp
+    with `R'' \<in> B` `R \<in> B` have "R \<notin> Dt B" unfolding Dt_def by blast
+    with `Dt B = B` `R \<in> B` show "HOL.False" by simp
+  qed
+  hence "leqSl R R'" using `leqSl R'' R'` by simp
+  have "R = R'" using `leqSl R R'` `leqSl R' R` `R \<in> B` `R' \<in> A` assms(1,2) leqSl_antisym by blast
+  thus "R \<in> A" using `R' \<in> A` by simp
+qed
+
+lemma Dcl_iter_Suc_stops_pair: "\<exists>i. Dcl_iter (Suc i) nd nd' = Dcl_iter i nd nd'"
+proof -
+  have "finite (range (\<lambda>i. Dcl_iter i nd nd'))" by (rule Dcl_iter_finite_range_all)
+  then obtain i j where "i < j" and eq: "Dcl_iter i nd nd' = Dcl_iter j nd nd'"
+    using pigeonhole_infinite_seq by blast
+  
+  have "initFrag (Dcl_iter j nd nd') (Dcl_iter (Suc i) nd nd')"
+    using `i < j` Dcl_iter_initFrag_le Suc_leI by blast
+  moreover have "initFrag (Dcl_iter (Suc i) nd nd') (Dcl_iter i nd nd')"
+    using Dcl_iter_initFrag_Suc by simp
+  ultimately have BA: "initFrag (Dcl_iter i nd nd') (Dcl_iter (Suc i) nd nd')"
+    unfolding eq[symmetric] by simp
+    
+  have AB: "initFrag (Dcl_iter (Suc i) nd nd') (Dcl_iter i nd nd')"
+    using Dcl_iter_initFrag_Suc by simp
+    
+  have "Dcl_iter i nd nd' \<subseteq> SlopedRels" and "Dcl_iter (Suc i) nd nd' \<subseteq> SlopedRels"
+    using Dcl_iter_SlopedRels by blast+
+  moreover have "Dt (Dcl_iter i nd nd') = Dcl_iter i nd nd'" 
+    and "Dt (Dcl_iter (Suc i) nd nd') = Dcl_iter (Suc i) nd nd'"
+    using Dcl_iter_thin by blast+
+  ultimately have "Dcl_iter (Suc i) nd nd' = Dcl_iter i nd nd'"
+    using Dt_initFrag_antisym[of "Dcl_iter (Suc i) nd nd'" "Dcl_iter i nd nd'"] AB BA by simp
+  thus ?thesis by blast
+qed
+
+lemma Dcl_iter_eq_implies_Suc_eq:
+  assumes "i < j" "Dcl_iter i nd nd' = Dcl_iter j nd nd'"
+  shows "Dcl_iter (Suc i) nd nd' = Dcl_iter i nd nd'"
+proof -
+  have "initFrag (Dcl_iter j nd nd') (Dcl_iter (Suc i) nd nd')"
+    using \<open>i < j\<close> Dcl_iter_initFrag_le Suc_leI by blast
+  moreover have "initFrag (Dcl_iter (Suc i) nd nd') (Dcl_iter i nd nd')"
+    using Dcl_iter_initFrag_Suc by simp
+  ultimately have BA: "initFrag (Dcl_iter i nd nd') (Dcl_iter (Suc i) nd nd')"
+    unfolding assms(2)[symmetric] by simp
+  have AB: "initFrag (Dcl_iter (Suc i) nd nd') (Dcl_iter i nd nd')"
+    using Dcl_iter_initFrag_Suc by simp
+  have "Dcl_iter i nd nd' \<subseteq> SlopedRels" and "Dcl_iter (Suc i) nd nd' \<subseteq> SlopedRels"
+    using Dcl_iter_SlopedRels by blast+
+  moreover have "Dt (Dcl_iter i nd nd') = Dcl_iter i nd nd'" 
+    and "Dt (Dcl_iter (Suc i) nd nd') = Dcl_iter (Suc i) nd nd'"
+    using Dcl_iter_thin by blast+
+  ultimately show ?thesis
+    using Dt_initFrag_antisym[of "Dcl_iter (Suc i) nd nd'" "Dcl_iter i nd nd'"] AB BA by simp
+qed
+
+lemma Dcl_iter_Suc_stops: "\<exists>i. Dcl_iter (Suc i) = Dcl_iter i"
+proof (rule ccontr)
+  assume "\<not>(\<exists>i. Dcl_iter (Suc i) = Dcl_iter i)"
+  hence "\<forall>i. \<exists>nd nd'. Dcl_iter (Suc i) nd nd' \<noteq> Dcl_iter i nd nd'" by (metis ext)
+  hence "\<forall>i. \<exists>ndd. ndd \<in> Node \<times> Node \<and> Dcl_iter (Suc i) (fst ndd) (snd ndd) \<noteq> Dcl_iter i (fst ndd) (snd ndd)"
+    by (metis Dcl_iter_nodes_out SigmaI fst_eqD snd_eqD)
+  then obtain ndi where ndi: "\<forall>i. ndi i \<in> Node \<times> Node \<and> Dcl_iter (Suc i) (fst (ndi i)) (snd (ndi i)) \<noteq> Dcl_iter i (fst (ndi i)) (snd (ndi i))"
+    by metis
+    
+  have "range ndi \<subseteq> Node \<times> Node" using ndi by blast
+  hence "finite (range ndi)" using Node_finite finite_cartesian_product by (metis rev_finite_subset)
+  
+  have "UNIV = (\<Union>ndd \<in> range ndi. {i. ndi i = ndd})" by auto
+  moreover have "finite (range ndi)" by fact
+  ultimately obtain ndd where "ndd \<in> range ndi" and inf_I: "infinite {i. ndi i = ndd}"
+    using infinite_UNIV_nat finite_Union by (metis (no_types, lifting) finite_UN_I)
+  
+  define nd nd' I where "nd = fst ndd" and "nd' = snd ndd" and "I = {i. ndi i = ndd}"
+  have I_prop: "\<forall>i\<in>I. Dcl_iter (Suc i) nd nd' \<noteq> Dcl_iter i nd nd'"
+    using I_def nd_def nd'_def ndi by auto
+    
+  have "I = (\<Union>R \<in> (\<lambda>i. Dcl_iter i nd nd') ` I. {k\<in>I. Dcl_iter k nd nd' = R})" by auto
+  moreover have "finite ((\<lambda>i. Dcl_iter i nd nd') ` I)"
+    using Dcl_iter_finite_range_all[of nd nd'] 
+    by (metis Set.basic_monos(1) range_subsetD finite_subset image_subset_iff)
+  ultimately obtain R where "R \<in> (\<lambda>i. Dcl_iter i nd nd') ` I" and inf_R: "infinite {k\<in>I. Dcl_iter k nd nd' = R}"
+  proof -
+    { assume "\<forall>R \<in> (\<lambda>i. Dcl_iter i nd nd') ` I. finite {k\<in>I. Dcl_iter k nd nd' = R}"
+      hence "finite (\<Union>R\<in>(\<lambda>i. Dcl_iter i nd nd') ` I. {k\<in>I. Dcl_iter k nd nd' = R})"
+        using \<open>finite ((\<lambda>i. Dcl_iter i nd nd') ` I)\<close> by blast
+      hence "finite I"
+        using \<open>I = (\<Union>R\<in>(\<lambda>i. Dcl_iter i nd nd') ` I. {k\<in>I. Dcl_iter k nd nd' = R})\<close> by simp
+      hence "HOL.False"
+        using inf_I I_def by simp }
+    thus ?thesis
+      using that by blast
+  qed
+    
+  from inf_R have "\<forall>m. \<exists>n\<ge>m. n \<in> {k\<in>I. Dcl_iter k nd nd' = R}" 
+    by (simp add: infinite_nat_iff_unbounded_le)
+  then obtain i where i_in: "i \<in> I" and i_R: "Dcl_iter i nd nd' = R"
+    by blast
+    
+  have "\<exists>j \<ge> Suc i. j \<in> {k\<in>I. Dcl_iter k nd nd' = R}" 
+    using \<open>\<forall>m. \<exists>n\<ge>m. n \<in> {k\<in>I. Dcl_iter k nd nd' = R}\<close> by blast
+  then obtain j where j_in: "j \<in> I" and j_R: "Dcl_iter j nd nd' = R" and "i < j"
+    by auto
+    
+  have eq: "Dcl_iter i nd nd' = Dcl_iter j nd nd'" using i_R j_R by simp
+  
+  have "Dcl_iter (Suc i) nd nd' = Dcl_iter i nd nd'" 
+    using \<open>i < j\<close> eq Dcl_iter_eq_implies_Suc_eq by blast
+  thus "HOL.False" using I_prop i_in by simp
+qed
+
+lemma Dcl_iter_Suc_stable:
+  assumes "Dcl_iter (Suc i) = Dcl_iter i"
+  shows "Dcl_iter (Suc (Suc i)) = Dcl_iter i"
+  using assms unfolding fun_eq_iff Dcl_iter.simps(2) by auto
+
+lemma Dcl_iter_stable:
+  assumes "Dcl_iter (Suc i) = Dcl_iter i" and "j \<ge> i"
+  shows "Dcl_iter j = Dcl_iter i"
+  using assms apply(induct "j-i" arbitrary: j i)
+  subgoal by auto
+  subgoal for x j
+    by (metis Suc_diff_le Suc_leD diff_diff_cancel diff_le_self Dcl_iter_Suc_stable)
+  done
+
+lemma Dcl_iter_stops: "\<exists>k. \<forall>j \<ge> k. Dcl_iter j = Dcl_iter k"
+  using Dcl_iter_Suc_stops Dcl_iter_stable by blast
+
+definition Dcl :: "'node \<Rightarrow> 'node \<Rightarrow> ('pos \<Rightarrow> 'pos \<Rightarrow> slope \<Rightarrow> bool) set" where 
+"Dcl nd nd' \<equiv> Dcl_iter (LEAST k. \<forall>j \<ge> k. Dcl_iter j = Dcl_iter k) nd nd'"
+
+lemma Dcl_eq_some_Dcl_iter: "\<exists>i. \<forall>j \<ge> i. Dcl = Dcl_iter j"
+proof -
+  obtain k where k_def: "\<forall>j \<ge> k. Dcl_iter j = Dcl_iter k" using Dcl_iter_stops by blast
+  let ?k_least = "LEAST k. \<forall>j \<ge> k. Dcl_iter j = Dcl_iter k"
+  have "\<forall>j \<ge> ?k_least. Dcl_iter j = Dcl_iter ?k_least"
+    using k_def LeastI[of "\<lambda>k. \<forall>j \<ge> k. Dcl_iter j = Dcl_iter k"] by blast
+  thus ?thesis unfolding Dcl_def fun_eq_iff by blast
+qed
+
+lemma Dcl_initFrag_Ccl: "initFrag (Dcl nd nd') (Ccl nd nd')"
+proof -
+  obtain k_dcl where k_dcl: "\<forall>j\<ge>k_dcl. Dcl = Dcl_iter j" using Dcl_eq_some_Dcl_iter by blast
+  obtain k_ccl where k_ccl: "Ccl = Ccl_iter k_ccl" using Ccl_eq_some_Ccl_iter by blast
+  define max_k where "max_k \<equiv> max k_dcl k_ccl"
+  have 1: "Dcl nd nd' = Dcl_iter max_k nd nd'" using k_dcl max_k_def by (simp add: fun_eq_iff)
+  have 2: "Ccl_iter k_ccl nd nd' \<subseteq> Ccl_iter max_k nd nd'" using Ccl_iter_mono max_k_def by auto
+  have 3: "Ccl nd nd' = Ccl_iter k_ccl nd nd'" using k_ccl by simp
+  moreover have "Ccl nd nd' = Ccl_iter max_k nd nd'" 
+    using 2 3 unfolding Ccl_def by auto
+  ultimately show ?thesis using Dcl_iter_initFrag_Ccl_iter[of max_k] 1 by metis
+qed
+
+lemma Ccl_initFrag_Dcl: "initFrag (Ccl nd nd') (Dcl nd nd')"
+proof -
+  obtain k_dcl where k_dcl: "\<forall>j\<ge>k_dcl. Dcl = Dcl_iter j" using Dcl_eq_some_Dcl_iter by blast
+  obtain k_ccl where k_ccl: "Ccl = Ccl_iter k_ccl" using Ccl_eq_some_Ccl_iter by blast
+  define max_k where "max_k \<equiv> max k_dcl k_ccl"
+  have 1: "Dcl nd nd' = Dcl_iter max_k nd nd'" using k_dcl max_k_def by (simp add: fun_eq_iff)
+  have 2: "Ccl_iter k_ccl nd nd' \<subseteq> Ccl_iter max_k nd nd'" using Ccl_iter_mono max_k_def by auto
+  have 3: "Ccl nd nd' = Ccl_iter k_ccl nd nd'" using k_ccl by simp 
+  moreover have "Ccl nd nd' = Ccl_iter max_k nd nd'" 
+    using 2 3 unfolding Ccl_def by auto
+  ultimately show ?thesis using Ccl_iter_initFrag_Dcl_iter[of max_k] 1 by metis 
+qed
+
+(* ======================================================================== *)
+(* 5. CONNECTION BETWEEN RELATIONAL ABSTRACTION AND INFINITE DESCENT        *)
+(* ======================================================================== *)
+
+definition "TransitiveLooping \<equiv> \<forall>nd\<in>Node. \<forall>K\<in>Dcl nd nd. (\<exists>P. transSl K P P Decr)"
 
 lemma TransitiveLooping_iff_TransitiveLoopingCcl:
 "TransitiveLooping \<longleftrightarrow> TransitiveLoopingCcl"
@@ -566,8 +804,8 @@ proof standard
     unfolding initFrag_def by auto
     then obtain P where "transSl K' P P Decr" using 1 nd unfolding TransitiveLooping_def by auto
     with le have "transSl K P P Decr" 
-    	by (smt (verit, del_insts) UNIV_I finite_has_maximal2 finite_slope_set 
-        leqSl_def less_eq_slope.elims(3) transSl_mono)
+      using transSl_mono 
+      by (metis leqSl_def less_eq_slope.elims(2) slope.distinct(1))
     thus "\<exists>P. transSl K P P Decr" ..
   qed
 next
@@ -581,11 +819,16 @@ next
     unfolding initFrag_def by auto
     then obtain P where "transSl K' P P Decr" using 1 nd unfolding TransitiveLoopingCcl_def by auto
     with le have "transSl K P P Decr" 
-    	by (smt (verit, del_insts) UNIV_I finite_has_maximal2 finite_slope_set 
-        leqSl_def less_eq_slope.elims(3) transSl_mono)
+      using transSl_mono
+      by (metis leqSl_def less_eq_slope.elims(2) slope.distinct(1))
     thus "\<exists>P. transSl K P P Decr" ..
   qed 
 qed
+
+
+(****)
+(**MORE GRAPH NOTIONS***)
+(****)
 
 
 (* 4. THE CONNECTION BETWEEN THE RELATIONAL ABSTRACTION AND THE 
@@ -1434,6 +1677,12 @@ by blast
 definition "allOmegaCyclesDescendS \<equiv> 
   \<forall>ndl. cycleG ndl \<longrightarrow> (\<exists> Ps. descentIpathS (srepeat (butlast ndl)) Ps)"
 
+(**************************************************)
+(**************************************************)
+(**************************************************)
+(**************************************************)
+(**************************************************)
+
 proposition TransitiveLoopingCcl_iff_allOmegaCyclesDescendS:
 "TransitiveLoopingCcl \<longleftrightarrow> allOmegaCyclesDescendS"
 using tracksPers_transSl_iff_ex_descentIpathS
@@ -1441,30 +1690,24 @@ unfolding TransitiveLoopingCcl_def allOmegaCyclesDescendS_def
 using Ccl_nodes cycleG_def tracksPers_leftTotal Node_finite
 by (metis (no_types, opaque_lifting) empty_iff tracksPers_rightTotal)
 
-
 lemma InfiniteDescent_imp_InfiniteDescent: 
 assumes "InfiniteDescent"
 shows "allOmegaCyclesDescendS"
 using InfiniteDescent_def allOmegaCyclesDescendS_def assms cycle_srepeat_ipath 
 srepeat_cycle_descentIpath_imp_descentIpath by blast
 
-
 proposition allOmegaCyclesDescendS_implies_InfiniteDescent:
 "allOmegaCyclesDescendS \<longrightarrow> InfiniteDescent" 
 proof(rule impI, rule ccontr, unfold VLA_Criterion)
-  (*Assume allOmegaCyclesDescendS holds. 
-    Assuming a contradiction that Infinite Descend does not hold,
-    by Theorem 4.1, Lang(PAut) is not included in Lang(TAut) *)
   assume omega: allOmegaCyclesDescendS and
          lang_inc:"\<not> NBA.language Paut\<^sub>V \<subseteq> NBA.language Taut\<^sub>V"
-  (*by Prop 1, we have an omega-lasso (v @- srepeat u) in Lang(PAut) but not in Lang(TAut)*)
   then obtain v u where lasso_in:"v @- srepeat u \<in> NBA.language Paut\<^sub>V"
                     and lasso_nin:"v @- srepeat u \<notin> NBA.language Taut\<^sub>V" 
                     and u_ne:"u \<noteq>[]"
     apply-by(drule prop1'[OF alpha_subseq_PTaut\<^sub>V finite_Nodes_Paut\<^sub>V finite_Nodes_Taut\<^sub>V], elim exE conjE)
 
   also have alw_Node:"alw (holdsS Node) (v @- srepeat u)"
-           and ipath:"ipath (v @- srepeat u)" 
+            and ipath:"ipath (v @- srepeat u)" 
     using lasso_in unfolding Paut\<^sub>V_lang ipath_def by auto
 
   have nn:"2 \<le> length v + length (u @ [hd u])" using u_ne by (cases u, auto) 
@@ -1478,8 +1721,6 @@ proof(rule impI, rule ccontr, unfold VLA_Criterion)
   have "cycleG (u @ [hd u])"
     unfolding cycleG_def using u_ne path_appendR[OF path_v] by auto
 
-  (*which means that (srepeat u) is an omega-cycle that is not (strongly) descending, 
-    thus contradicting allOmegaCyclesDescendS.*)
   then obtain Ps where descentS:"descentIpathS (srepeat u) Ps"
     using omega unfolding allOmegaCyclesDescendS_def by auto
   hence descent:"descentIpath (srepeat u) Ps" using descentIpathS_imp_descentIpath by auto
@@ -1495,9 +1736,6 @@ corollary Relation_Based_Criterion:
 "InfiniteDescent \<longleftrightarrow> TransitiveLoopingCcl"
 using allOmegaCyclesDescendS_implies_InfiniteDescent InfiniteDescent_imp_InfiniteDescent 
 TransitiveLoopingCcl_iff_allOmegaCyclesDescendS by blast
-
-(* END RESULT: The vertex (or sloped) relation-based criterion is necessary and sufficient 
-for infinte descent: *)
 
 theorem Relation_Based_Criterion': 
 "InfiniteDescent \<longleftrightarrow> TransitiveLooping"

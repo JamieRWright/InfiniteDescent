@@ -1,11 +1,13 @@
 session Infinite_Descent_Criteria =  
  "Buchi_Complementation" +
-  options [document = false]  
+  options [document_build = pdflatex]  
   sessions 
    "HOL-Library"
   directories 
     Examples
     Criterion
+    "Criterion/Incompleteness"
+    "Criterion/OXSD"
   theories
     Preliminaries
     Buchi_Preliminaries
@@ -19,11 +21,16 @@ session Infinite_Descent_Criteria =
     Relation_Based_Criterion
     SLA_Criterion
     VLA_Criterion
-    (*Incomplete proofs*)
+    (*Incompleteness proofs*)
     SD_Incomplete
     XSD_Incomplete
     (*All criterion*)
     All
+
+    (*Legacy XSD*)
+    OXSD_Criterion
+    OXSD_Incomplete
+    XSD_Equivalence
     
     (*Examples*)
     Flat_Aux
